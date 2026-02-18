@@ -17,5 +17,5 @@ jobs:
     uses: ajnacloud-ksj/ajna-github-workflows/.github/workflows/reusable-python-publish.yml@main
     with:
       python-version: '3.12'
-      uv-cache: true
+      uv-cache: false
     secrets: inherit
