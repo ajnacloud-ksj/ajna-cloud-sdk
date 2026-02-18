@@ -1,6 +1,6 @@
 """
 Ajna Cloud SDK
-
+-
 Shared library for Ajna Cloud serverless backends:
 - IbexDB client with caching and Lambda invocation
 - Authentication provider (Local / Cognito / Test)
