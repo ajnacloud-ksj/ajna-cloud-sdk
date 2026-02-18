@@ -1,0 +1,21 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ajna_cloud/**'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  publish:
+    uses: ajnacloud-ksj/ajna-github-workflows/.github/workflows/reusable-python-publish.yml@main
+    with:
+      python-version: '3.12'
+      uv-cache: true
+    secrets: inherit
