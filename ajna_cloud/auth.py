@@ -106,10 +106,15 @@ class CognitoAuthProvider(AuthProvider):
                 issuer=f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}"
             )
 
+            # Determine role: prefer custom:role attribute, then fall back to Cognito group membership
+            groups = claims.get('cognito:groups', []) or []
+            role = claims.get('custom:role') or ('admin' if 'admin' in groups else 'user')
+
             return {
                 'user_id': claims.get('sub'),
                 'email': claims.get('email'),
-                'role': claims.get('custom:role', 'user'),
+                'role': role,
+                'groups': groups,
                 'auth_mode': 'cognito',
                 'claims': claims
             }
@@ -132,10 +137,23 @@ class CognitoAuthProvider(AuthProvider):
         if not claims:
             raise AuthError(401, "No claims found in request context")
 
+        # Determine role: prefer custom:role attribute, then fall back to Cognito group membership
+        groups = claims.get('cognito:groups')
+        if isinstance(groups, str):
+            # API Gateway sometimes stringifies arrays
+            import ast
+            try:
+                groups = ast.literal_eval(groups)
+            except:
+                groups = [groups]
+        groups = groups or []
+        role = claims.get('custom:role') or ('admin' if 'admin' in groups else 'user')
+
         return {
             'user_id': claims.get('sub'),
             'email': claims.get('email'),
-            'role': claims.get('custom:role', 'user'),
+            'role': role,
+            'groups': groups,
             'auth_mode': 'cognito',
             'claims': claims
         }

@@ -443,6 +443,43 @@ class OptimizedIbexClient:
         }
         return self._execute(payload, is_write=False)
 
+    def export_csv(
+        self,
+        table: str,
+        filters: List[Dict] = None,
+        projection: List[str] = None,
+        sort: List[Dict] = None,
+        limit: int = None,
+        filename: str = None,
+        include_header: bool = True,
+        include_deleted: bool = False,
+        expiration_seconds: int = 3600
+    ) -> Dict[str, Any]:
+        """Export table data as CSV, returning a presigned download URL"""
+        self._total_requests += 1
+
+        payload = {
+            "operation": "EXPORT_CSV",
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
+            "table": table,
+            "include_header": include_header,
+            "include_deleted": include_deleted,
+            "expiration_seconds": expiration_seconds
+        }
+        if filters is not None:
+            payload["filters"] = filters
+        if projection is not None:
+            payload["projection"] = projection
+        if sort is not None:
+            payload["sort"] = sort
+        if limit is not None:
+            payload["limit"] = limit
+        if filename is not None:
+            payload["filename"] = filename
+
+        return self._execute(payload, is_write=False)
+
     # ─── Batch Operations ────────────────────────────────────────────────────
 
     def batch_write(self, table: str, records: List[Dict], batch_size: int = 100) -> Dict[str, Any]:
