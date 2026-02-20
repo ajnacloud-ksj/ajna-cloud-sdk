@@ -110,11 +110,20 @@ class CognitoAuthProvider(AuthProvider):
             groups = claims.get('cognito:groups', []) or []
             role = claims.get('custom:role') or ('admin' if 'admin' in groups else 'user')
 
+            # Determine scopes (OAuth2.0)
+            scope_str = claims.get('scope', '')
+            scopes = scope_str.split(' ') if scope_str else []
+
+            # Determine enterprise tenant context
+            tenant_id = claims.get('custom:tenant_id') or claims.get('tenant_id')
+
             return {
                 'user_id': claims.get('sub'),
                 'email': claims.get('email'),
                 'role': role,
                 'groups': groups,
+                'scopes': scopes,
+                'tenant_id': tenant_id,
                 'auth_mode': 'cognito',
                 'claims': claims
             }
@@ -149,11 +158,20 @@ class CognitoAuthProvider(AuthProvider):
         groups = groups or []
         role = claims.get('custom:role') or ('admin' if 'admin' in groups else 'user')
 
+        # Determine scopes (OAuth2.0)
+        scope_str = claims.get('scope', '')
+        scopes = scope_str.split(' ') if scope_str else []
+
+        # Determine enterprise tenant context
+        tenant_id = claims.get('custom:tenant_id') or claims.get('tenant_id')
+
         return {
             'user_id': claims.get('sub'),
             'email': claims.get('email'),
             'role': role,
             'groups': groups,
+            'scopes': scopes,
+            'tenant_id': tenant_id,
             'auth_mode': 'cognito',
             'claims': claims
         }
@@ -309,6 +327,41 @@ def require_roles(allowed_roles: list) -> Callable:
 
 # Maintain backward compatibility for existing code that uses @require_admin
 require_admin = require_roles(['admin', 'SystemAdmin'])
+
+
+def require_scopes(required_scopes: list) -> Callable:
+    """
+    Decorator that requires the user to have ALL of the specified OAuth2 scopes.
+    Usage: @require_scopes(['read:devices', 'write:devices'])
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(event: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+            provider = AuthFactory.get_provider()
+            respond = _get_respond()
+
+            try:
+                user_info = provider.authenticate(event)
+                context['auth'] = user_info
+
+                user_scopes = user_info.get('scopes', [])
+                
+                # Check if the user has ALL required scopes
+                has_access = all(scope in user_scopes for scope in required_scopes)
+
+                if not has_access:
+                    msg = f"Forbidden: Requires scopes {required_scopes}"
+                    return respond(403, {'error': msg})
+
+                return func(event, context)
+            except AuthError as e:
+                return respond(e.status_code, {'error': e.message})
+            except Exception as e:
+                logger.error(f"Auth error: {e}")
+                return respond(401, {'error': 'Authentication failed'})
+
+        return wrapper
+    return decorator
 
 
 def get_user_id(event: Dict[str, Any]) -> Optional[str]:
