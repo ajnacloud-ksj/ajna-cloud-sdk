@@ -8,10 +8,10 @@ Shared library for Ajna Cloud serverless backends:
 - Lambda HTTP response utilities
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from ajna_cloud.ibex import OptimizedIbexClient, TenantManager
-from ajna_cloud.auth import AuthFactory, require_auth, require_admin, get_user_id
+from ajna_cloud.auth import AuthFactory, require_auth, require_admin, require_roles, get_user_id
 from ajna_cloud.logger import Logger, logger, log_handler
 from ajna_cloud.http import respond, get_cors_headers
 
@@ -23,6 +23,7 @@ __all__ = [
     "AuthFactory",
     "require_auth",
     "require_admin",
+    "require_roles",
     "get_user_id",
     # Logging
     "Logger",

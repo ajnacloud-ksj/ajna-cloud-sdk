@@ -271,28 +271,44 @@ def require_auth(func: Callable) -> Callable:
     return wrapper
 
 
-def require_admin(func: Callable) -> Callable:
-    """Decorator that requires admin role."""
-    @wraps(func)
-    def wrapper(event: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
-        provider = AuthFactory.get_provider()
-        respond = _get_respond()
+def require_roles(allowed_roles: list) -> Callable:
+    """
+    Decorator that requires the user to have at least one of the allowed roles.
+    Matches against the user's role or their Cognito groups.
+    Usage: @require_roles(['admin', 'editor'])
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(event: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+            provider = AuthFactory.get_provider()
+            respond = _get_respond()
 
-        try:
-            user_info = provider.authenticate(event)
-            context['auth'] = user_info
+            try:
+                user_info = provider.authenticate(event)
+                context['auth'] = user_info
 
-            if user_info.get('role') != 'admin':
-                return respond(403, {'error': 'Admin access required'})
+                user_role = user_info.get('role', '')
+                user_groups = user_info.get('groups', [])
+                
+                # Check if the user's explicit role OR any of their Cognito groups are in the allowed list
+                has_access = (user_role in allowed_roles) or any(group in allowed_roles for group in user_groups)
 
-            return func(event, context)
-        except AuthError as e:
-            return respond(e.status_code, {'error': e.message})
-        except Exception as e:
-            logger.error(f"Auth error: {e}")
-            return respond(401, {'error': 'Authentication failed'})
+                if not has_access:
+                    msg = f"Forbidden: Requires one of {allowed_roles}"
+                    return respond(403, {'error': msg})
 
-    return wrapper
+                return func(event, context)
+            except AuthError as e:
+                return respond(e.status_code, {'error': e.message})
+            except Exception as e:
+                logger.error(f"Auth error: {e}")
+                return respond(401, {'error': 'Authentication failed'})
+
+        return wrapper
+    return decorator
+
+# Maintain backward compatibility for existing code that uses @require_admin
+require_admin = require_roles(['admin', 'SystemAdmin'])
 
 
 def get_user_id(event: Dict[str, Any]) -> Optional[str]:

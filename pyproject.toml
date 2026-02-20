@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ajna-cloud"
-version = "0.2.0"
+version = "0.2.1"
 description = "Ajna Cloud SDK — IbexDB client, Cognito auth, structured logging, and Lambda HTTP utilities for Ajna serverless backends"
 readme = "README.md"
 license = {text = "MIT"}
