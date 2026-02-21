@@ -1,0 +1,8 @@
+boto3>=1.28.0
+requests>=2.28.0
+python-jose[cryptography]>=3.3.0
+
+[dev]
+pytest>=7.0
+pytest-cov>=4.0
+moto>=4.0

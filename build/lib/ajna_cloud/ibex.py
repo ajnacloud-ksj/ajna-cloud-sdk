@@ -177,9 +177,7 @@ class OptimizedIbexClient:
         limit: int = 50,
         offset: int = 0,
         use_cache: bool = True,
-        include_deleted: bool = False,
-        tenant_id: str = None,
-        namespace: str = None
+        include_deleted: bool = False
     ) -> Dict[str, Any]:
         """Query records from a table"""
         self._total_requests += 1
@@ -196,8 +194,8 @@ class OptimizedIbexClient:
 
         payload = {
             "operation": "QUERY",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "limit": limit,
             "skip_versioning": False
@@ -224,14 +222,14 @@ class OptimizedIbexClient:
 
         return result
 
-    def write(self, table: str, records: List[Dict], tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def write(self, table: str, records: List[Dict]) -> Dict[str, Any]:
         """Write (append) records to a table"""
         self._total_requests += 1
 
         payload = {
             "operation": "WRITE",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "records": records,
             "mode": "append"
@@ -250,14 +248,14 @@ class OptimizedIbexClient:
 
         return result
 
-    def upsert(self, table: str, records: List[Dict], filters: List[Dict] = None, updates: Dict = None, tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def upsert(self, table: str, records: List[Dict], filters: List[Dict] = None, updates: Dict = None) -> Dict[str, Any]:
         """Upsert records — update if exists, insert if not"""
         self._total_requests += 1
 
         payload = {
             "operation": "UPSERT",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "records": records
         }
@@ -276,14 +274,14 @@ class OptimizedIbexClient:
 
         return result
 
-    def update(self, table: str, filters: List[Dict], updates: Dict, tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def update(self, table: str, filters: List[Dict], updates: Dict) -> Dict[str, Any]:
         """Update records matching filters"""
         self._total_requests += 1
 
         payload = {
             "operation": "UPDATE",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "filters": filters,
             "updates": updates
@@ -299,14 +297,14 @@ class OptimizedIbexClient:
 
         return result
 
-    def delete(self, table: str, filters: List[Dict], tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def delete(self, table: str, filters: List[Dict]) -> Dict[str, Any]:
         """Soft-delete records matching filters"""
         self._total_requests += 1
 
         payload = {
             "operation": "DELETE",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "filters": filters
         }
@@ -367,43 +365,43 @@ class OptimizedIbexClient:
 
     # ─── Table Management ────────────────────────────────────────────────────
 
-    def create_table(self, table: str, schema: Dict, if_not_exists: bool = True, tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def create_table(self, table: str, schema: Dict, if_not_exists: bool = True) -> Dict[str, Any]:
         """Create a new table"""
         payload = {
             "operation": "CREATE_TABLE",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "schema": schema,
             "if_not_exists": if_not_exists
         }
         return self._execute(payload, is_write=True)
 
-    def list_tables(self, tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def list_tables(self) -> Dict[str, Any]:
         """List all tables in the namespace"""
         payload = {
             "operation": "LIST_TABLES",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace
         }
         return self._execute(payload, is_write=False)
 
-    def describe_table(self, table: str, tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def describe_table(self, table: str) -> Dict[str, Any]:
         """Describe table schema and metadata"""
         payload = {
             "operation": "DESCRIBE_TABLE",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table
         }
         return self._execute(payload, is_write=False)
 
-    def drop_table(self, table: str, purge: bool = False, tenant_id: str = None, namespace: str = None) -> Dict[str, Any]:
+    def drop_table(self, table: str, purge: bool = False) -> Dict[str, Any]:
         """Drop a table"""
         payload = {
             "operation": "DROP_TABLE",
-            "tenant_id": tenant_id or self.tenant_id,
-            "namespace": namespace or self.namespace,
+            "tenant_id": self.tenant_id,
+            "namespace": self.namespace,
             "table": table,
             "purge": purge
         }
@@ -424,24 +422,22 @@ class OptimizedIbexClient:
 
     # ─── Storage Operations ──────────────────────────────────────────────────
 
-    def get_upload_url(self, filename: str, content_type: str, expires_in: int = 300, tenant_id: str = None, folder: str = None) -> Dict[str, Any]:
+    def get_upload_url(self, filename: str, content_type: str, expires_in: int = 300) -> Dict[str, Any]:
         """Get a presigned S3 URL for uploading a file"""
         payload = {
             "operation": "GET_UPLOAD_URL",
-            "tenant_id": tenant_id or self.tenant_id,
+            "tenant_id": self.tenant_id,
             "filename": filename,
             "content_type": content_type,
             "expires_in": expires_in
         }
-        if folder:
-            payload["folder"] = folder
         return self._execute(payload, is_write=False)
 
-    def get_download_url(self, file_key: str, expires_in: int = 3600, tenant_id: str = None) -> Dict[str, Any]:
+    def get_download_url(self, file_key: str, expires_in: int = 3600) -> Dict[str, Any]:
         """Get a presigned S3 URL for downloading a file"""
         payload = {
             "operation": "GET_DOWNLOAD_URL",
-            "tenant_id": tenant_id or self.tenant_id,
+            "tenant_id": self.tenant_id,
             "file_key": file_key,
             "expires_in": expires_in
         }
