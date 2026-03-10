@@ -39,10 +39,14 @@ class LocalAuthProvider(AuthProvider):
         user_id = (
             headers.get('X-User-ID') or headers.get('x-user-id') or 'local-dev-user'
         )
+        tenant_id = (
+            headers.get('X-Tenant-ID') or headers.get('x-tenant-id') or os.environ.get('TENANT_ID', 'greenbox')
+        )
         return {
             'user_id': user_id,
             'email': f'{user_id}@localhost',
             'role': 'admin',
+            'tenant_id': tenant_id,
             'auth_mode': 'local'
         }
 

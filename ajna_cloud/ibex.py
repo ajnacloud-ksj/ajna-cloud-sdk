@@ -179,7 +179,10 @@ class OptimizedIbexClient:
         use_cache: bool = True,
         include_deleted: bool = False,
         tenant_id: str = None,
-        namespace: str = None
+        namespace: str = None,
+        projection: List[str] = None,
+        aggregations: List[Dict] = None,
+        group_by: List[str] = None
     ) -> Dict[str, Any]:
         """Query records from a table"""
         self._total_requests += 1
@@ -210,6 +213,12 @@ class OptimizedIbexClient:
             payload["offset"] = offset
         if include_deleted:
             payload["include_deleted"] = True
+        if projection:
+            payload["projection"] = projection
+        if aggregations:
+            payload["aggregations"] = aggregations
+        if group_by:
+            payload["group_by"] = group_by
 
         result = self._execute(payload, is_write=False)
 
