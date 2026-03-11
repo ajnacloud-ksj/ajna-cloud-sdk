@@ -493,6 +493,82 @@ class OptimizedIbexClient:
 
         return self._execute(payload, is_write=False)
 
+    def execute_sql(
+        self,
+        sql: str,
+        params: list = None,
+        namespace: str = None,
+        timeout_ms: int = 30000,
+    ) -> Dict[str, Any]:
+        """
+        Execute raw SQL query via the query engine.
+
+        Supports complex queries, JOINs, aggregations, and window functions
+        powered by DuckDB + Apache Iceberg.
+
+        Args:
+            sql: SQL query string
+            params: Optional query parameters for parameterized queries
+            namespace: Override namespace (uses default if not set)
+            timeout_ms: Query timeout in milliseconds
+
+        Returns:
+            Dict with 'records', 'row_count', and 'metadata'
+        """
+        self._total_requests += 1
+
+        payload = {
+            "operation": "EXECUTE_SQL",
+            "tenant_id": self.tenant_id,
+            "namespace": namespace or self.namespace,
+            "sql": sql,
+            "timeout_ms": timeout_ms,
+        }
+        if params:
+            payload["params"] = params
+
+        return self._execute(payload, is_write=False)
+
+    def federated_query(
+        self,
+        sql: str,
+        params: list = None,
+        sources: dict = None,
+        namespace: str = None,
+        timeout_ms: int = 30000,
+    ) -> Dict[str, Any]:
+        """
+        Execute a federated query across multiple data sources.
+
+        Supports cross-source JOINs between Iceberg tables, PostgreSQL,
+        MySQL, and other data sources via DuckDB's ATTACH mechanism.
+
+        Args:
+            sql: SQL query string (can reference tables from multiple sources)
+            params: Optional query parameters
+            sources: Optional data source configuration overrides
+            namespace: Override namespace
+            timeout_ms: Query timeout in milliseconds
+
+        Returns:
+            Dict with 'records', 'row_count', and 'metadata'
+        """
+        self._total_requests += 1
+
+        payload = {
+            "operation": "FEDERATED_QUERY",
+            "tenant_id": self.tenant_id,
+            "namespace": namespace or self.namespace,
+            "sql": sql,
+            "timeout_ms": timeout_ms,
+        }
+        if params:
+            payload["params"] = params
+        if sources:
+            payload["sources"] = sources
+
+        return self._execute(payload, is_write=False)
+
     # ─── Batch Operations ────────────────────────────────────────────────────
 
     def batch_write(self, table: str, records: List[Dict], batch_size: int = 100) -> Dict[str, Any]:
