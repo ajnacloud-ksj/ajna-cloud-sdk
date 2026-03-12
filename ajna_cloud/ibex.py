@@ -650,9 +650,9 @@ class OptimizedIbexClient:
 
                 if response.status_code == 200:
                     return response.json()
-                elif response.status_code == 429:
+                elif response.status_code in (429, 502, 503, 504):
                     wait = min(2 ** attempt, 8)
-                    logger.warning(f"Rate limited, waiting {wait}s")
+                    logger.warning(f"Retryable status {response.status_code}, waiting {wait}s (attempt {attempt + 1})")
                     time.sleep(wait)
                     continue
                 else:
