@@ -446,7 +446,7 @@ class OptimizedIbexClient:
             payload["folder"] = folder
         return self._execute(payload, is_write=False)
 
-    def get_download_url(self, file_key: str, expires_in: int = 3600, tenant_id: str = None) -> Dict[str, Any]:
+    def get_download_url(self, file_key: str, expires_in: int = 3600, tenant_id: str = None, bucket: str = None) -> Dict[str, Any]:
         """Get a presigned S3 URL for downloading a file"""
         payload = {
             "operation": "GET_DOWNLOAD_URL",
@@ -454,6 +454,8 @@ class OptimizedIbexClient:
             "file_key": file_key,
             "expires_in": expires_in
         }
+        if bucket:
+            payload["bucket"] = bucket
         return self._execute(payload, is_write=False)
 
     def export_csv(
